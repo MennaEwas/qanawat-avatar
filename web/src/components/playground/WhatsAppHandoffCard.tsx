@@ -35,8 +35,7 @@ export function WhatsAppHandoffCard({
     <div className="flex items-center gap-3 w-full rounded-sm border border-gray-800 bg-gray-950 p-3">
       {/* Sized up and given a real quiet-zone margin so it scans reliably
           from a phone at arm's length, not just up close. */}
-      {/* Literal white: the light theme maps the "white" class to dark. */}
-      <div className="p-2.5 rounded-sm flex-shrink-0" style={{ background: "#fff" }}>
+      <div className="bg-white p-2.5 rounded-sm flex-shrink-0">
         <QRCodeSVG value={data.link} width={112} height={112} />
       </div>
       <div className="flex flex-col min-w-0">

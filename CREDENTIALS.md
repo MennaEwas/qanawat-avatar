@@ -38,6 +38,19 @@ Dependencies are not included (about 1.3 GB, platform-specific); these commands 
 
 Running the agent locally registers it as `alsalam-concierge`, the live cloud agent's name, so it can receive live calls. For testing, set `AGENT_NAME=alsalam-test` for both web and agent.
 
-## Status (2026-10-15)
+## Status (2026-10-18)
 
-Live: the agent and website as of 2026-10-12. Not yet live: admin panel and per-screen settings, code-level OTP lock, Arabic chat alignment, new-server migration with fallback.
+Live: the agent and website as of 2026-10-12.
+
+Covered in the current codebase:
+
+- OTP before any patient lookup or disclosure; `send_otp_whatsapp` + `verify_otp` gate patient details and booking actions.
+- Default Kuwait dialing code `+965` for local mobile numbers unless the caller explicitly provides another country code.
+- Appointment booking through the hospital `submit_appointment` flow, with the booking wrapper handling the normalized IDs and API payload.
+- Biography lookup both as a standalone card flow and as part of the booking journey via `search_bio_all` + `show_doctor_card`.
+- Arabic chat alignment via RTL direction and language-aware message layout in the web chat UI.
+- Per-screen backend config for font size, theme (dark/light), background image, section ratios, AI model, voice agent, and agent ID in the admin/screen config model.
+- Deployment and server runbook details in `deploy/RUNBOOK.md` and the server spec document under `docs/`.
+- New MCP migration path with fallback to legacy server endpoints is supported in the agent config and tool wiring.
+
+The remaining operational item is the hospital-side `submit_appointment` contract change from the upstream team; the client wrapper is already coded to accept the updated schema when the new tool payload is shared.

@@ -97,25 +97,15 @@ const safelist = [
   ]),
 ];
 
-// Dark/light is chosen per screen at runtime (admin panel), so gray/black/
-// white resolve to CSS variables set in globals.css: the dark values by
-// default, and under html[data-theme="light"] the gray scale is flipped
-// (950 <-> 50, ...) and black/white swapped. The UI is written dark-first
-// (bg-gray-950 panels, text-gray-300 copy), so the same classes render a
-// light theme with dark text. Spots that must stay a literal color (e.g. a
-// QR code's white backing) use inline styles instead of these classes.
-const cssVarColor = (name) => `rgb(var(--${name}) / <alpha-value>)`;
-const varGray = Object.fromEntries(shades.map((shade) => [shade, cssVarColor(`gray-${shade}`)]));
-
 module.exports = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     colors: {
       transparent: "transparent",
       current: "currentColor",
-      black: cssVarColor("black"),
-      white: cssVarColor("white"),
-      gray: varGray,
+      black: colors.black,
+      white: colors.white,
+      gray: colors.neutral,
       ...customColors,
     },
     extend: {

@@ -1,6 +1,5 @@
-# Qanawat Concierge — self-hosted stack (web UI + admin panel + agent worker).
-# Values are read from deploy/.env (web) and deploy/agent.env (agent); see the
-# matching *.example files. Run from this directory:
+# Qanawat Concierge — playground stack (web UI + agent worker).
+# Values are read from deploy/.env (see .env.example). Run from this directory:
 #   docker compose up -d --build
 
 name: qanawat-playground
@@ -18,16 +17,6 @@ services:
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
       NEXT_PUBLIC_LIVEKIT_URL: ${NEXT_PUBLIC_LIVEKIT_URL}
-      # Must match AGENT_NAME in agent.env -- calls are dispatched by name.
-      AGENT_NAME: ${AGENT_NAME:-alsalam-concierge}
-      # /admin login.
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET}
-      # Screen configs + uploaded backgrounds live on the volume below.
-      SCREEN_STORAGE: filesystem
-      SCREEN_DATA_DIR: /app/data
-    volumes:
-      - screen-data:/app/data
     ports:
       # Bind to loopback only; the host nginx vhost terminates TLS and proxies in.
       - "127.0.0.1:3002:3000"
@@ -36,12 +25,9 @@ services:
   agent:
     build:
       context: ../agent
-    # Everything in agent/.env.example (LiveKit, alexa360, HeyGen LiveAvatar,
-    # WhatsApp, hospital MCP, voice/model defaults, AGENT_NAME).
-    env_file: ./agent.env
-    # Outbound only — the worker dials LiveKit. No published ports.
+    environment:
+      LIVEKIT_URL: ${NEXT_PUBLIC_LIVEKIT_URL}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+    # Outbound only — the worker dials LiveKit Cloud. No published ports.
     restart: unless-stopped
-
-volumes:
-  # Back this up: it holds every screen's admin settings and uploaded images.
-  screen-data:

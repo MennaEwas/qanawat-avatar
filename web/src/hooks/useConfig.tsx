@@ -56,10 +56,9 @@ const defaultConfig: AppConfig = {
     editable: true,
     theme_color: "blue",
     chat: true,
-    // Voice-only for the caller: never ask for camera or screen permission.
     inputs: {
-      camera: false,
-      screen: false,
+      camera: true,
+      screen: true,
       mic: true,
     },
     outputs: {
@@ -124,10 +123,8 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
       theme_color: params.get("theme_color") || "blue",
       agent: params.get("agent") || undefined,
       inputs: {
-        // Ignored on purpose: old links/bookmarks carrying cam=1 or
-        // screen=1 must not trigger a camera/screen permission prompt.
-        camera: false,
-        screen: false,
+        camera: params.get("cam") === "1",
+        screen: params.get("screen") === "1",
         mic: params.get("mic") === "1",
       },
       outputs: {

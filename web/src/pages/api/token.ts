@@ -2,18 +2,15 @@ import { NextApiRequest, NextApiResponse } from "next";
 
 import { TokenSourceRequestPayload } from "livekit-client";
 import { AccessToken } from "livekit-server-sdk";
-import { RoomAgentDispatch, RoomConfiguration } from "@livekit/protocol";
-
-import { DEFAULT_SCREEN_ID, agentRoomMetadata, isValidScreenId } from "@/lib/screen";
-import { getScreen } from "@/lib/screenStore";
+import { RoomConfiguration } from "@livekit/protocol";
 
 const apiKey = process.env.LIVEKIT_API_KEY;
 const apiSecret = process.env.LIVEKIT_API_SECRET;
-
-// Every room explicitly dispatches the voice agent registered under this name
-// (agent/src/agent.py AGENT_NAME), so unnamed workers left running elsewhere
-// on the same LiveKit project never pick up calls.
-const AGENT_NAME = process.env.AGENT_NAME || "alsalam-concierge";
+// Optional: dispatch a specific named agent deployment (e.g. the LiveKit
+// Cloud one, "alsalam-concierge") into every room. Leave unset to use
+// automatic dispatch -- which is what a local `uv run src/agent.py dev`
+// worker registers for, so local testing reaches your local agent.
+const agentName = process.env.LIVEKIT_AGENT_NAME?.trim();
 
 type TokenRequest = {
   room_name: string;
@@ -22,8 +19,6 @@ type TokenRequest = {
   participant_metadata?: string;
   participant_attributes?: Record<string, string>;
   room_config?: ReturnType<RoomConfiguration["toJson"]>;
-  // Set by this handler from the screen's admin config (see agentRoomMetadata).
-  room_metadata?: string;
 };
 
 // This route handler creates a token for a given room and participant
@@ -59,18 +54,11 @@ async function createToken(request: TokenRequest) {
   if (request.participant_attributes) {
     at.attributes = request.participant_attributes;
   }
-  const roomConfig = request.room_config
-    ? RoomConfiguration.fromJson(request.room_config)
-    : new RoomConfiguration();
-  // The playground may send an agent entry with an empty name; that would
-  // mean "any unnamed worker", which is exactly what we're avoiding.
-  roomConfig.agents = roomConfig.agents.filter((a) => a.agentName);
-  if (roomConfig.agents.length === 0) {
-    roomConfig.agents = [new RoomAgentDispatch({ agentName: AGENT_NAME })];
+  if (request.room_config) {
+    at.roomConfig = RoomConfiguration.fromJson(request.room_config);
+  } else if (agentName) {
+    at.roomConfig = new RoomConfiguration({ agents: [{ agentName }] });
   }
-  // Always the server-side screen settings, never client-supplied metadata.
-  roomConfig.metadata = request.room_metadata ?? "";
-  at.roomConfig = roomConfig;
 
   return at.toJwt();
 }
@@ -85,8 +73,14 @@ export default async function handleToken(
     return;
   }
   if (!apiKey || !apiSecret) {
+    // Shown verbatim in the browser by the token fetch -- say how to fix it.
     res.statusMessage = "Environment variables aren't set up correctly";
-    res.status(500).end();
+    res.status(500).json({
+      message:
+        "LIVEKIT_API_KEY / LIVEKIT_API_SECRET are not set. For local dev, " +
+        "put them (and NEXT_PUBLIC_LIVEKIT_URL) in web/.env.local and " +
+        "restart `npm run dev`.",
+    });
     return;
   }
 
@@ -123,17 +117,6 @@ export default async function handleToken(
   if (Object.keys(attrs).length) options.participant_attributes = attrs;
 
   try {
-    // `?screen=<id>` (default: the "default" screen) -> that screen's AI
-    // settings from /admin go to the agent via the room metadata. Explicit
-    // ?agent= / ?avatar= URL params still win.
-    const screenId = (qs(req.query.screen) || DEFAULT_SCREEN_ID).toLowerCase();
-    const screen = isValidScreenId(screenId) ? await getScreen(screenId) : null;
-    const meta = screen ? agentRoomMetadata(screen) : {};
-    if (agentNs) meta.ai_agent_ns = agentNs;
-    if (avatarId) meta.avatar_id = avatarId;
-    options.room_metadata = Object.keys(meta).length ? JSON.stringify(meta) : "";
-
-
     res.status(200).json({
       server_url: process.env.NEXT_PUBLIC_LIVEKIT_URL,
       participant_token: await createToken(options),

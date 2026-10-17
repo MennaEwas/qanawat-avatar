@@ -7,8 +7,6 @@ type ChatMessageInput = {
   height: number;
   onSend?: (message: string) => void;
   extraButton?: React.ReactNode;
-  // Font size/family chosen in the chat toolbar (ChatTile).
-  textStyle?: React.CSSProperties;
 };
 
 export const ChatMessageInput = ({
@@ -17,7 +15,6 @@ export const ChatMessageInput = ({
   height,
   onSend,
   extraButton,
-  textStyle,
 }: ChatMessageInput) => {
   const [message, setMessage] = useState("");
   const [inputTextWidth, setInputTextWidth] = useState(0);
@@ -67,14 +64,28 @@ export const ChatMessageInput = ({
       style={{ height: height }}
     >
       <div className="flex flex-row pt-3 gap-2 items-center relative">
-        {/* Native caret instead of the playground's fake block cursor: the
-            fake one is positioned left-to-right only and lands in the wrong
-            place for Arabic (right-to-left) text. */}
+        <div
+          className={`w-2 h-4 bg-${inputHasFocus ? accentColor : "gray"}-${
+            inputHasFocus ? 500 : 800
+          } ${inputHasFocus ? "shadow-" + accentColor : ""} absolute left-2 ${
+            !isTyping && inputHasFocus ? "cursor-animation" : ""
+          }`}
+          style={{
+            transform:
+              "translateX(" +
+              (message.length > 0
+                ? Math.min(inputTextWidth, inputWidth - 20) - 4
+                : 0) +
+              "px)",
+          }}
+        ></div>
         <input
           ref={inputRef}
-          dir="auto"
-          className={`w-full bg-transparent opacity-60 text-gray-200 p-2 px-3 rounded-sm border border-gray-800 focus:opacity-100 focus:outline-none focus:border-${accentColor}-700 focus:ring-1 focus:ring-${accentColor}-700`}
-          style={{ ...textStyle, caretColor: "currentColor" }}
+          className={`w-full text-xs caret-transparent bg-transparent opacity-25 text-gray-300 p-2 pr-6 rounded-sm focus:opacity-100 focus:outline-none focus:border-${accentColor}-700 focus:ring-1 focus:ring-${accentColor}-700`}
+          style={{
+            paddingLeft: message.length > 0 ? "12px" : "24px",
+            caretShape: "block",
+          }}
           placeholder={placeholder}
           value={message}
           onChange={(e) => {
@@ -102,7 +113,7 @@ export const ChatMessageInput = ({
         <button
           disabled={message.length === 0 || !onSend}
           onClick={handleSend}
-          className={`text-sm uppercase text-${accentColor}-500 hover:bg-${accentColor}-950 p-2 rounded-md opacity-${
+          className={`text-xs uppercase text-${accentColor}-500 hover:bg-${accentColor}-950 p-2 rounded-md opacity-${
             message.length > 0 ? 100 : 25
           } pointer-events-${message.length > 0 ? "auto" : "none"}`}
         >

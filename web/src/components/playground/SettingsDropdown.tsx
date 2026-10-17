@@ -37,12 +37,20 @@ const settingsDropdown: SettingValue[] = [
     type: "separator",
     key: "separator_2",
   },
-  // No camera/screenshare toggles: callers are voice-only, and the page
-  // must never prompt for camera or screen permission.
+  {
+    title: "Enable camera",
+    type: "inputs",
+    key: "camera",
+  },
   {
     title: "Enable mic",
     type: "inputs",
     key: "mic",
+  },
+  {
+    title: "Allow screenshare",
+    type: "inputs",
+    key: "screen",
   },
 ];
 

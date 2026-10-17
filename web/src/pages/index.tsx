@@ -9,11 +9,6 @@ import { PlaygroundToast, ToastType } from "@/components/toast/PlaygroundToast";
 import { ConfigProvider, useConfig } from "@/hooks/useConfig";
 import { ToastProvider, useToast } from "@/components/toast/ToasterProvider";
 import { TokenSourceConfigurable, TokenSource } from "livekit-client";
-import type { GetServerSideProps } from "next";
-
-import { ScreenProvider, useScreen } from "@/hooks/useScreen";
-import { loadScreenProps } from "@/lib/loadScreen";
-import { DEFAULT_SCREEN_ID, ScreenConfig } from "@/lib/screen";
 
 const themeColors = [
   "blue",
@@ -48,9 +43,8 @@ function readAvatarOptions(): AvatarOption[] {
 }
 const avatarOptions = readAvatarOptions();
 
-function buildTokenEndpoint(screenId: string, agent: string | null, avatar: string | null) {
+function buildTokenEndpoint(agent: string | null, avatar: string | null) {
   const p = new URLSearchParams();
-  p.set("screen", screenId);
   if (agent) p.set("agent", agent);
   if (avatar) p.set("avatar", avatar);
   const q = p.toString();
@@ -59,37 +53,25 @@ function buildTokenEndpoint(screenId: string, agent: string | null, avatar: stri
 
 const inter = Inter({ subsets: ["latin"] });
 
-// Loads the screen's admin config server-side: "/" renders the "default"
-// screen, /s/<id> (pages/s/[id].tsx) renders that one.
-export const getServerSideProps: GetServerSideProps = async () => loadScreenProps(DEFAULT_SCREEN_ID);
-
-export default function Home({ screen }: { screen: ScreenConfig }) {
+export default function Home() {
   return (
-    <ScreenProvider screen={screen}>
-      <ToastProvider>
-        <ConfigProvider>
-          <HomeInner />
-        </ConfigProvider>
-      </ToastProvider>
-    </ScreenProvider>
+    <ToastProvider>
+      <ConfigProvider>
+        <HomeInner />
+      </ConfigProvider>
+    </ToastProvider>
   );
 }
 
 export function HomeInner() {
   const { config } = useConfig();
-  const screen = useScreen();
-
-  // Dark/light per screen: globals.css switches the palette on this attribute.
-  useEffect(() => {
-    document.documentElement.dataset.theme = screen.theme;
-  }, [screen.theme]);
   const { toastMessage, setToastMessage } = useToast();
   const [autoConnect, setAutoConnect] = useState(false);
   const [tokenSource, setTokenSource] = useState<
     TokenSourceConfigurable | undefined
   >(() =>
     process.env.NEXT_PUBLIC_LIVEKIT_URL
-      ? TokenSource.endpoint(buildTokenEndpoint(screen.id, null, null))
+      ? TokenSource.endpoint("/api/token")
       : undefined,
   );
 
@@ -106,23 +88,18 @@ export function HomeInner() {
       (avatarOptions.length ? avatarOptions[0].id : null);
     setUrlAgent(agent);
     setAvatarId(avatar);
-    setTokenSource(TokenSource.endpoint(buildTokenEndpoint(screen.id, agent, avatar)));
-  }, [screen.id]);
+    setTokenSource(TokenSource.endpoint(buildTokenEndpoint(agent, avatar)));
+  }, []);
 
   const pickAvatar = (id: string) => {
     setAvatarId(id);
-    setTokenSource(TokenSource.endpoint(buildTokenEndpoint(screen.id, urlAgent, id)));
+    setTokenSource(TokenSource.endpoint(buildTokenEndpoint(urlAgent, id)));
   };
-
-  const overlay =
-    screen.theme === "light"
-      ? `rgba(255,255,255,${screen.backgroundOverlay})`
-      : `rgba(0,0,0,${screen.backgroundOverlay})`;
 
   return (
     <>
       <Head>
-        <title>{screen.title || config.title}</title>
+        <title>{config.title}</title>
         <meta name="description" content={config.description} />
         <meta
           name="viewport"
@@ -135,11 +112,8 @@ export function HomeInner() {
       <main
         className="relative flex flex-col justify-center px-4 items-center h-full w-full bg-black bg-cover bg-center"
         style={{
-          // Screen's background image (default: hospital photo), washed
-          // toward the theme's base color so the panels stay readable.
-          backgroundImage: `linear-gradient(${overlay}, ${overlay}), url('${
-            screen.backgroundImage || "/hospital-bg.webp"
-          }')`,
+          backgroundImage:
+            "linear-gradient(rgba(0,0,0,0.78), rgba(0,0,0,0.88)), url('/hospital-bg.webp')",
         }}
       >
         {avatarOptions.length > 1 && (

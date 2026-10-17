@@ -22,7 +22,7 @@ import {
 } from "@/components/playground/PlaygroundTile";
 import { useRemoteSession } from "@/hooks/useRemoteSession";
 import { useConfig } from "@/hooks/useConfig";
-import { useScreen } from "@/hooks/useScreen";
+import { useToast } from "@/components/toast/ToasterProvider";
 import { useUplinkLatency } from "@/hooks/useUplinkLatency";
 import { AttributeItem } from "@/lib/types";
 import { PartialMessage } from "@bufbuild/protobuf";
@@ -48,16 +48,6 @@ import { QRCodeSVG } from "qrcode.react";
 import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import tailwindTheme from "../../lib/tailwindTheme.preval";
 import { RpcPanel } from "./RpcPanel";
-
-const CHROMA_KEY_ENABLED = process.env.NEXT_PUBLIC_CHROMA_KEY === "true";
-
-// Where the doctor / hand-off cards sit over the avatar video (admin setting).
-const CARD_POSITION_CLASS: Record<string, string> = {
-  "bottom-left": "bottom-4 left-4",
-  "bottom-right": "bottom-4 right-4",
-  "top-left": "top-4 left-4",
-  "top-right": "top-4 right-4",
-};
 
 export interface PlaygroundMeta {
   name: string;
@@ -86,7 +76,7 @@ export default function Playground({
   autoConnect,
 }: PlaygroundProps) {
   const { config, setUserSettings } = useConfig();
-  const screen = useScreen();
+  const { setToastMessage } = useToast();
 
   const [rpcMethod, setRpcMethod] = useState("");
   const [rpcPayload, setRpcPayload] = useState("");
@@ -145,9 +135,20 @@ export default function Playground({
     if (session.isConnected) {
       return;
     }
-    session.start();
+    // session.start() rejects when the token fetch or the room connection
+    // fails; left unhandled, the mic publish just times out ~15s later with
+    // the opaque "publishing rejected as engine not connected within
+    // timeout". Surface the real cause instead.
+    session.start().catch((e: unknown) => {
+      const reason = e instanceof Error ? e.message : String(e);
+      console.error("Failed to start session:", e);
+      setToastMessage({
+        type: "error",
+        message: `Couldn't connect to the assistant: ${reason}`,
+      });
+    });
     setHasConnected(true);
-  }, [session]);
+  }, [session, setToastMessage]);
 
   useEffect(() => {
     if (autoConnect && !hasConnected) {
@@ -201,25 +202,15 @@ export default function Playground({
       </div>
     );
 
-    // Only key out a green-screen backdrop when the avatar actually has one
-    // (NEXT_PUBLIC_CHROMA_KEY=true). The per-frame CPU keying delays the
-    // video behind the audio, and the current avatar (a photo with the
-    // hospital lobby already behind him) has no green screen to remove, so
-    // by default the track is rendered directly.
-    const videoContent = !agent.cameraTrack ? null : CHROMA_KEY_ENABLED ? (
+    // Key out the avatar's green-screen backdrop and show the Al Salam
+    // Hospital building photo through it instead of a flat color.
+    const videoContent = agent.cameraTrack ? (
       <ChromaKeyVideo
         trackRef={agent.cameraTrack}
         backgroundUrl="/hospital-bg.webp"
         objectFit={config.video_fit === "cover" ? "cover" : "contain"}
       />
-    ) : (
-      <VideoTrack
-        trackRef={agent.cameraTrack}
-        className={`absolute inset-0 w-full h-full ${
-          config.video_fit === "cover" ? "object-cover" : "object-contain"
-        }`}
-      />
-    );
+    ) : null;
 
     let content = null;
     if (connectionState === ConnectionState.Disconnected) {
@@ -673,7 +664,7 @@ export default function Playground({
     <SessionProvider session={session}>
       <div className="flex flex-col h-full w-full">
         <PlaygroundHeader
-          title={screen.title || config.title}
+          title={config.title}
           logo={logo}
           githubLink={config.github_link}
           height={headerHeight}
@@ -712,11 +703,7 @@ export default function Playground({
               waveform and settings/debug stay behind the toggle popup,
               since those aren't patient-facing. */}
           {config.settings.outputs.video && (
-            <div
-              className="flex-col grow gap-4 h-full hidden lg:flex relative"
-              // Section ratio from the screen's admin config.
-              style={{ flexBasis: `${screen.videoPercent}%` }}
-            >
+            <div className="flex-col grow gap-4 h-full hidden lg:flex relative basis-2/3">
               <PlaygroundTile
                 title="Agent Video"
                 className="w-full h-full grow"
@@ -738,11 +725,7 @@ export default function Playground({
               {/* Always visible on top of the video -- the caller should see
                   who they're booking with without an extra click. Renders
                   nothing until the agent sets a doctor_card attribute. */}
-              <div
-                className={`absolute ${
-                  CARD_POSITION_CLASS[screen.cardPosition] ?? CARD_POSITION_CLASS["bottom-left"]
-                } z-20 max-w-sm flex flex-col gap-2`}
-              >
+              <div className="absolute bottom-4 left-4 z-20 max-w-sm flex flex-col gap-2">
                 <DoctorCard
                   rawAttribute={agentAttributes.attributes?.doctor_card}
                   themeColor={config.settings.theme_color}
@@ -760,28 +743,19 @@ export default function Playground({
           )}
 
           {config.settings.chat && (
-            <div
-              className="hidden lg:flex flex-col h-full min-w-[320px] flex-shrink-0"
-              // Width and side (left/right of the video) from the admin config.
-              style={{
-                flexBasis: `${100 - screen.videoPercent}%`,
-                order: screen.chatPosition === "left" ? -1 : 0,
-              }}
-            >
+            <div className="hidden lg:flex flex-col h-full basis-1/3 min-w-[320px] max-w-md flex-shrink-0">
               <PlaygroundTile title="Chat" className="w-full h-full grow">
                 {chatTileContent}
               </PlaygroundTile>
             </div>
           )}
 
-          {screen.showSettingsButton && (
           <button
             onClick={() => setShowSidePanel((v) => !v)}
             className={`hidden lg:flex fixed top-20 right-4 z-40 items-center gap-1.5 rounded-full border border-gray-800 bg-gray-950/90 px-3 py-2 text-xs text-gray-200 hover:bg-gray-800 shadow-lg backdrop-blur`}
           >
             {showSidePanel ? "Hide" : "Show"} settings
           </button>
-          )}
 
           {showSidePanel && (
             <>

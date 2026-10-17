@@ -1,12 +1,11 @@
-import os
 from pathlib import Path
 from dotenv import load_dotenv
 from livekit import api
 
 load_dotenv(Path("agent/src/.env.local"))
 
-LIVEKIT_API_KEY = os.getenv("LIVEKIT_API_KEY", "")
-LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET", "")
+LIVEKIT_API_KEY = "APItif6KvigvQrF"
+LIVEKIT_API_SECRET = "BimwW52ab7X1e7ny7ewlCUxFPgjkR7eprRu9tLvU5YCB"
 
 token = api.AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET)
 token.with_identity("tester")

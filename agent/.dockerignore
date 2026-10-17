@@ -5,5 +5,3 @@ __pycache__
 .env
 .env.local
 .cache
-**/.env
-**/.env.local

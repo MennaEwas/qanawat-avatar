@@ -2,24 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Theme colors (see tailwind.config.js). Dark is the default; a screen set
-   to light in /admin gets html[data-theme="light"]. Values are "R G B". */
 :root {
-  --gray-50: 250 250 250;
-  --gray-100: 245 245 245;
-  --gray-200: 229 229 229;
-  --gray-300: 212 212 212;
-  --gray-400: 163 163 163;
-  --gray-500: 115 115 115;
-  --gray-600: 82 82 82;
-  --gray-700: 64 64 64;
-  --gray-800: 38 38 38;
-  --gray-900: 23 23 23;
-  --gray-950: 10 10 10;
-  --black: 0 0 0;
-  --white: 255 255 255;
-  --page-bg: #000;
-
   /* Debug panel theme — mirrors LiveKit components-js default theme */
   --lk-dbg-bg: #111;
   --lk-dbg-bg2: #1a1a1a;
@@ -34,36 +17,6 @@
   --lk-dbg-control-bg: #1a1a1a;
   --lk-dbg-control-hover: #242424;
   --lk-dbg-fg4: #555;
-}
-
-html[data-theme="light"] {
-  --gray-50: 10 10 10;
-  --gray-100: 23 23 23;
-  --gray-200: 38 38 38;
-  --gray-300: 64 64 64;
-  --gray-400: 82 82 82;
-  --gray-500: 115 115 115;
-  --gray-600: 163 163 163;
-  --gray-700: 212 212 212;
-  --gray-800: 229 229 229;
-  --gray-900: 245 245 245;
-  --gray-950: 250 250 250;
-  --black: 255 255 255;
-  --white: 23 23 23;
-  --page-bg: #fafafa;
-
-  --lk-dbg-bg: #ffffff;
-  --lk-dbg-bg2: #f5f5f5;
-  --lk-dbg-bg3: #ebebeb;
-  --lk-dbg-bg4: #e0e0e0;
-  --lk-dbg-bg5: #d4d4d4;
-  --lk-dbg-fg: #171717;
-  --lk-dbg-fg3: #404040;
-  --lk-dbg-fg5: #525252;
-  --lk-dbg-border: rgba(0, 0, 0, 0.1);
-  --lk-dbg-control-bg: #f5f5f5;
-  --lk-dbg-control-hover: #ebebeb;
-  --lk-dbg-fg4: #a3a3a3;
 }
 
 .lk-dbg-thin-scroll {
@@ -87,7 +40,7 @@ html[data-theme="light"] {
 }
 
 body {
-  background: var(--page-bg);
+  background: black;
   --lk-va-bar-gap: 4px;
   --lk-va-bar-width: 4px;
   --lk-va-border-radius: 2px;

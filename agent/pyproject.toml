@@ -1,0 +1,28 @@
+[project]
+name = "qanawat-avatar-agent"
+version = "1.0.0"
+description = "Qanawat Digital Communications — AI voice concierge (LiveKit Agents)"
+requires-python = ">=3.10, <3.15"
+
+dependencies = [
+    "livekit-agents[mcp]>=1.6.9",
+    "livekit-plugins-ai-coustics~=0.2",
+    "livekit-plugins-liveavatar>=1.8",
+    "python-dotenv",
+    "httpx",
+]
+
+[dependency-groups]
+dev = [
+    "ruff",
+]
+
+[tool.uv]
+# Just a dependency set — nothing to build/install for the project itself.
+package = false
+# yarl 1.24.1 shipped a cp310-only wheel with no sdist; pin below it so installs
+# work on Python 3.11+. Remove once upstream uploads the remaining wheels.
+constraint-dependencies = ["yarl<1.24"]
+
+[tool.ruff]
+line-length = 88
